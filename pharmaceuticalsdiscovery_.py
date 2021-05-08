@@ -242,7 +242,7 @@ f, ax = plt.subplots(figsize=(15, 15))
 # Generate a custom diverging colormap
 cmap = sns.diverging_palette(230, 20, as_cmap=True)
 # Draw the heatmap with the mask and correct aspect ratio
-sns.heatmap(corr, mask=mask, cmap=cmap, center=0, square=True, linewidths=.5, cbar_kws={"shrink": .5})
+sns.heatmap(corr_genes, mask=mask, cmap=cmap, center=0, square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
 # Compute the correlation matrix
 corr_cels = data.loc[:, 'c-0':'c-50'].corr()
@@ -265,4 +265,54 @@ url_data = "https://github.com/rlatorraca/PharmaceuticalsDiscovery/blob/master/d
 data_results = pd.read_csv(url_data)
 
 data_results.head()
+
+data_results['acat_inhibitor'].unique()
+
+# Just SUM by columns numeric values, excluding ID
+#  data_results.drop('id', axis = 1).sum().sort_values(ascending=False)
+counter_mecanismOfAction_col = data_results.select_dtypes('int64').sum().sort_values(ascending=False)
+counter_mecanismOfAction_col
+
+data_results.info()
+
+# Just SUM by row numeric values, excluding ID
+#  data_results.drop('id', axis = 1).sum().sort_values(ascending=False)
+counter_mecanismOfAction_rows = data_results.select_dtypes('int64').sum(axis=1)
+counter_mecanismOfAction_rows.sort_values(ascending=False)
+
+counter_mecanismOfAction_rows
+
+# total Mechanism of Action = 'n_moa'
+data_results['n_moa'] = counter_mecanismOfAction_rows 
+data_results.head()
+
+data_results.head()
+
+# active or not Actio mechanism = active_moa
+data_results['active_moa'] = (data_results['numbers_mecanismOfAction'] != 0)
+data_results.head()
+
+# MERGING the 2 DB
+data_merged = pd.merge(data, data_results[['id','n_moa', 'active_moa']], on='id')
+data_merged
+
+data_merged.query('tratamento == "com_controle"')['active_moa'].value_counts()
+
+data_merged.query('tratamento == "com_droga"')['active_moa'].value_counts()
+
+principal_composts = data_merged['composto'].value_counts().index[:11]
+principal_composts
+
+# Distribution to 'g-0'
+plt.figure(figsize=(25,15))
+sns.boxplot(data=data_merged, y='g-0', x='composto')
+
+plt.figure(figsize=(20,25))
+sns.boxplot(data=data_merged.query('composto in @principal_composts'), y='g-0', x='composto',hue='active_moa')
+
+plt.figure(figsize=(30,25))
+sns.catplot(data=data_merged.query('composto in @principal_composts'), y='g-0', x='composto',hue='active_moa', col='dose', kind="box",  height=15)
+
+plt.figure(figsize=(30,25))
+sns.catplot(data=data_merged.query('composto in @principal_composts'), y='g-0', x='composto',hue='active_moa', col='tratamento', kind="box",  height=15)
 
