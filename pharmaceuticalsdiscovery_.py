@@ -289,7 +289,7 @@ data_results.head()
 data_results.head()
 
 # active or not Actio mechanism = active_moa
-data_results['active_moa'] = (data_results['numbers_mecanismOfAction'] != 0)
+data_results['active_moa'] = (data_results['n_moa'] != 0)
 data_results.head()
 
 # MERGING the 2 DB
@@ -315,4 +315,124 @@ sns.catplot(data=data_merged.query('composto in @principal_composts'), y='g-0', 
 
 plt.figure(figsize=(30,25))
 sns.catplot(data=data_merged.query('composto in @principal_composts'), y='g-0', x='composto',hue='active_moa', col='tratamento', kind="box",  height=15)
+
+## MACHINE LEARNING
+# We are going to try to discover each signature (each row) we want discover is active_moa is TRUE or FALSE
+# We area going to use LOGISTIC REGRESSION
+# Logistic regression is a statistical model that in its basic form uses a logistic function to model a binary dependent variable, although many more complex extensions exist. 
+#    In regression analysis, logistic regression (or logit regression) is estimating the parameters of a logistic model (a form of binary regression).
+
+
+# Tool used gonna be Scikit-learn
+from sklearn.linear_model import LogisticRegression
+# Toll used fo training the DataFrame
+from sklearn.model_selection import train_test_split
+
+# Instanciate a model
+model_rlogistic = LogisticRegression(max_iter=1000000)
+
+
+
+# Training the model LOGISTIC REGRESSION
+# x = label (signatures)
+
+# Select 'genic expression' (g-X) and 'celule viabililty' (c-X)
+x = data_merged.select_dtypes('float64') 
+
+# y = output
+y = data_merged['active_moa']
+
+# Spliting data for training and data for testing
+x_trained, x_tested, y_trained, y_tested = train_test_split(x,y, test_size = 0.3, stratify=y, random_state = 999)
+
+# Traininig my model
+model_rlogistic.fit(x_trained,y_trained)
+
+# checking the behaviour of my model (model accurate)
+model_rlogistic.score(x_tested, y_tested)
+
+train_test_split(x,y)
+
+# Importing a Dummy classifier as comparator base (using a simple prediction)
+from sklearn.dummy import DummyClassifier
+
+# Calculate the accuracy
+from sklearn.metrics import accuracy_score
+
+model_dummyClassifier = DummyClassifier('most_frequent')
+
+# Training the model Dummy
+# x = label (signatures)
+
+# Select 'genic expression' (g-X) and 'celule viabililty' (c-X)
+x_dummy = data_merged.select_dtypes('float64') 
+
+# y = output
+y_dummy = data_merged['active_moa']
+
+# Spliting data for training and data for testing
+x_trained_dummy, x_tested_dummy, y_trained_dummy, y_tested_dummy = train_test_split(x_dummy,y_dummy, test_size = 0.3, stratify=y, random_state = 999)
+
+# Traininig my model
+model_dummyClassifier.fit(x_trained_dummy,y_trained_dummy)
+
+predict_dummy = model_dummyClassifier.predict(x_tested_dummy)
+
+accuracy_score(y_tested_dummy, predict_dummy)
+
+data_merged['active_moa'].value_counts(normalize=True)
+
+# Training the model DECISION TREE
+from sklearn.tree import DecisionTreeClassifier
+# x = label (signatures)
+
+# Select 'genic expression' (g-X) and 'celule viabililty' (c-X)
+x_dTree = data_merged.select_dtypes('float64') 
+
+# y = output
+y_dTree = data_merged['active_moa']
+
+# Spliting data for training and data for testing
+x_trained_dTree, x_tested_dTree, y_trained_dTree, y_tested_dTree = train_test_split(x_dTree,y_dTree, test_size = 0.3, stratify=y, random_state = 999)
+
+# Traininig my model
+model_dTree = DecisionTreeClassifier(max_depth=3)
+model_dTree.fit(x_trained_dTree,y_trained_dTree)
+
+model_dTree.score(x_tested_dTree, y_tested_dTree)
+
+# ploting a decision tree
+from sklearn import tree
+fig, ax = plt.subplots(figsize=(15,10), facecolor='k')
+tree.plot_tree(model_dTree, ax = ax , fontsize = 10, rounded=True, filled=True, feature_names=x_trained_dTree.columns, class_names=['Não Ativado', 'Ativado'])
+plt.show()
+
+# Training the model DECISION TREE
+from sklearn.tree import DecisionTreeClassifier
+# x = label (signatures)
+
+# Select 'genic expression' (g-X) and 'celule viabililty' (c-X)
+x_dTree2 = data_merged.select_dtypes('float64') 
+
+# y = output
+y_dTree2 = data_merged['active_moa']
+
+# Spliting data for training and data for testing
+x_trained_dTree_In_Loop, x_tested_dTree_In_Loop, y_trained_dTree_In_Loop, y_tested_dTree_In_Loop = train_test_split(x_dTree,y_dTree, test_size = 0.3, stratify=y, random_state = 999)
+
+tested_values=[]
+trained_values=[]
+# Traininig my model between 3 to 30 depth
+for i in range(1,30):
+  model_dTree = DecisionTreeClassifier(max_depth=i)
+  model_dTree.fit(x_trained_dTree_In_Loop,y_trained_dTree_In_Loop)
+  tested_values.append(model_dTree.score(x_tested_dTree_In_Loop, y_tested_dTree_In_Loop))
+  trained_values.append(model_dTree.score(x_trained_dTree_In_Loop, y_trained_dTree_In_Loop))
+
+tested_values
+
+trained_values
+
+sns.lineplot(x=range(1,30), y=tested_values, label= 'tested_values')
+sns.lineplot(x=range(1,30), y=trained_values, label= 'trained_values')
 
