@@ -436,3 +436,27 @@ trained_values
 sns.lineplot(x=range(1,30), y=tested_values, label= 'tested_values')
 sns.lineplot(x=range(1,30), y=trained_values, label= 'trained_values')
 
+# RANDOM FOREST Model
+# Build many decisions tree
+
+from sklearn.ensemble import RandomForestClassifier
+# x = label (signatures)
+
+pd.get_dummies(data_merged, columns=['tratamento', 'dose', 'tempo'])
+
+# Dropping unnecessary data
+x_rForest = data_merged.drop(['id','n_moa', 'active_moa', 'composto'], axis=1) 
+
+# Converting Strings to boolean values following fields
+x_rForest = pd.get_dummies(x_rForest, columns=['tratamento', 'dose', 'tempo'])
+
+# y = output
+y_rForest = data_merged['active_moa']
+
+# Spliting data for training and data for testing
+x_trained_rForest,  x_tested_rForest , y_trained_rForest,  y_tested_rForest  = train_test_split(x_rForest ,y_rForest , test_size = 0.3, stratify=y, random_state = 999)
+
+model_rForest  = RandomForestClassifier(max_depth=10)
+model_rForest.fit(x_trained_rForest, y_trained_rForest) 
+model_rForest.score(x_trained_rForest, y_trained_rForest)
+
